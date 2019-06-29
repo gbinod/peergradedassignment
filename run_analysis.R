@@ -1,0 +1,151 @@
+
+#FILE NAME: run_analysis.R 
+
+#***TASKS***
+#The submitted data set is tidy.
+#The Github repo contains the required scripts.
+#GitHub contains a code book that modifies and updates the available codebooks with the data to indicate all the variables and summaries calculated, along with units, and any other relevant information.
+#The README that explains the analysis files is clear and understandable.
+#The work submitted for this project is the work of the student who submitted it.
+
+
+# Merges the training and the test sets to create one data set.
+# Extracts only the measurements on the mean and standard deviation for each measurement.
+# Uses descriptive activity names to name the activities in the data set
+# Appropriately labels the data set with descriptive variable names.
+# From the data set in step 4, creates a second, independent tidy data set with the average 
+## of each variable for each activity and each subject.
+
+library(dplyr)
+library(data.table)
+setwd("C:/Users/DELL/Desktop/Coursera2017/Course3")
+
+#Dowloading the UCI data from the web and unzipping it
+URL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip" 
+destFile <- "UCI HAR Dataset.zip"
+if (!file.exists(destFile)){
+  download.file(URL, destfile = destFile, mode ='wb')
+}
+if (!file.exists("UCI HAR Dataset")){
+  unzip(destFile)
+}
+ dateDownloaded <- date()
+ 
+ # Reading files 
+ setwd("./UCI HAR Dataset")
+ 
+ ##Reading activity files 
+ ActivityTest <- read.table("./test/X_test.txt", header = F)
+ ActivityTrain <- read.table("./train/x_train.txt", header = F)
+ 
+ ## Reading features files
+ featuresTest <- read.table ("./test/y_test.txt", header = F)
+ featuresTrain <- read.table ("./train/y_train.txt", header = F)
+ 
+ ##Reading subject files
+ subjectTest <- read.table("./test/subject_test.txt", header = F)
+ subjectTrain <- read.table("./train/subject_train.txt", header = F)
+ 
+ ##Reading activity labels
+ activityLabels <- read.table("./activity_labels.txt", header = F)
+ 
+ ##Reading features names 
+ featuresNames <- read.table("./features.txt", header = F) 
+ 
+ ##Merge dataframes: Activity, Fatures, and Subject 
+ activityData <- rbind(activityTest, activityTrain)
+ featuresData <- rbind(featuresTest, featuresTrain)
+ subjectData <- rbind(subjectTest, subjectTrain)
+
+ ##Renaming Columns
+ names(activityData) <- "ActivityN"
+ names(activityLabels) <- c("ActivityN", "Activity")
+ 
+ ##Getting factor of Activity names
+ Activity <- left_join(activityData, activityLabels, "ActivityN")[, 2]
+
+ ##Renaming subjectDat columns
+ names(subjectData) <- "Subject"
+ 
+ ##Renaming featuresData columns
+ names(featuresData) <- featuresNames$V2
+ 
+ ##Creating large Dataset extracting only the measurements & Standard deviation
+ subfeaturesNames <- featuresNames$V2[grep("mean\\(\\)|std\\(\\)", featuresNames$V2)]
+ dataNames <- c("Subject", "Activity", as.character(subfeaturesNames))
+ dataSet <- subset(dataSet, select=dataNames)
+ 
+ #####Renaming the columns of the large dataset using more descriptive activity names
+ names(DataSet)<-gsub("^t", "time", names(DataSet))
+ names(DataSet)<-gsub("^f", "frequency", names(DataSet))
+ names(DataSet)<-gsub("Acc", "Accelerometer", names(DataSet))
+ names(DataSet)<-gsub("Gyro", "Gyroscope", names(DataSet))
+ names(DataSet)<-gsub("Mag", "Magnitude", names(DataSet))
+ names(DataSet)<-gsub("BodyBody", "Body", names(DataSet))
+ ####Create a second, independent tidy data set with the average of each variable for each activity and each subject
+ SecondDataSet<-aggregate(. ~Subject + Activity, DataSet, mean)
+ SecondDataSet<-SecondDataSet[order(SecondDataSet$Subject,SecondDataSet$Activity),]
+ #Save this tidy dataset to local file
+ write.table(SecondDataSet, file = "tidydata.txt",row.name=FALSE)
+ 
+ ###################################################
+ ###Reading Activity files
+ ActivityTest <- read.table("./test/y_test.txt", header = F)
+ ActivityTrain <- read.table("./train/y_train.txt", header = F)
+ 
+ ##Reading features files
+ FeaturesTest <- read.table("./test/X_test.txt", header = F)
+ FeaturesTrain <- read.table("./train/X_train.txt", header = F)
+ 
+ ##Read subject files
+ SubjectTest <- read.table("./test/subject_test.txt", header = F)
+ SubjectTrain <- read.table("./train/subject_train.txt", header = F)
+ 
+ ##Reading Activity Labels
+ ActivityLabels <- read.table("./activity_labels.txt", header = F)
+ 
+ ##Reading Feature Names
+ FeaturesNames <- read.table("./features.txt", header = F)
+ 
+ ##Merging dataframes: Features Test&Train,Activity Test&Train, Subject Test&Train
+ FeaturesData <- rbind(FeaturesTest, FeaturesTrain)
+ SubjectData <- rbind(SubjectTest, SubjectTrain)
+ ActivityData <- rbind(ActivityTest, ActivityTrain)
+
+ ##Renaming colums in ActivityData & ActivityLabels dataframes
+ names(ActivityData) <- "ActivityN"
+ names(ActivityLabels) <- c("ActivityN", "Activity")
+ 
+ ##Getting factor of Activity names
+ Activity <- left_join(ActivityData, ActivityLabels, "ActivityN")[, 2]
+ 
+ ##Renaming SubjectData columns
+ names(SubjectData) <- "Subject"
+ 
+ #Renaming FeaturesData columns using columns from FeaturesNames
+ names(FeaturesData) <- FeaturesNames$V2
+ 
+ ##Creating one large Dataset with only these variables: SubjectData, Activity, FeaturesData
+ DataSet <- cbind(SubjectData, Activity)
+ DataSet <- cbind(DataSet, FeaturesData)
+ 
+ ##Creating New datasets extracting only the measurements on the mean and standard deviation
+ subFeaturesNames <- FeaturesNames$V2[grep("mean\\(\\)|std\\(\\)", FeaturesNames$V2)]
+ DataNames <- c("Subject", "Activity", as.character(subFeaturesNames))
+ DataSet <- subset(DataSet, selec=DataNames)
+ 
+ ##Renaming the columns of the large dataset using more descriptive activity names
+ names(DataSet)<-gsub("^t", "time", names(DataSet))
+ names(DataSet)<-gsub("^f", "frequency", names(DataSet))
+ names(DataSet)<-gsub("Acc", "Accelerometer", names(DataSet))
+ names(DataSet)<-gsub("Gyro", "Gyroscope", names(DataSet))
+ names(DataSet)<-gsub("Mag", "Magnitude", names(DataSet))
+ names(DataSet)<-gsub("BodyBody", "Body", names(DataSet))
+ 
+ ##Creating a second, independent tidy data set with the average of each variable 
+ SecondDataSet<-aggregate(. ~Subject + Activity, DataSet, mean)
+ SecondDataSet<-SecondDataSet[order(SecondDataSet$Subject,SecondDataSet$Activity),]
+ 
+ #Save this tidy dataset to local file
+ write.table(SecondDataSet, file = "tidydata.txt",row.name=FALSE)
+ 
